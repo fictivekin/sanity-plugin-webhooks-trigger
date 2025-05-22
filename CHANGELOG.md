@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.4.0...v0.4.1) (2025-05-22)
+
+
+### Bug Fixes
+
+* downgrade some packages for compat issues ([706acc3](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/706acc383c34fd07c220246228d2106223901314))
+* downgrade some packages for compat issues ([2bf8ec0](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/2bf8ec0a5b7d0a700980dc805c4903337610984c))
+
 ## [0.4.0](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.3.1...v0.4.0) (2025-05-22)
 
 
