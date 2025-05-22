@@ -51,14 +51,14 @@
     "nanoid": "^5.1.5"
   },
   "devDependencies": {
-    "@sanity/pkg-utils": "^7.2.2",
+    "@sanity/pkg-utils": "^6.13.4",
     "@sanity/plugin-kit": "^4.0.19",
     "@types/crypto-js": "^4.2.2",
+    "@typescript-eslint/eslint-plugin": "^7",
+    "@typescript-eslint/parser": "^7",
     "@types/react": "^19.1.5",
-    "@typescript-eslint/eslint-plugin": "^8",
-    "@typescript-eslint/parser": "^8",
-    "eslint": "^9",
-    "eslint-config-prettier": "^10",
+    "eslint": "^8",
+    "eslint-config-prettier": "^9",
     "eslint-config-sanity": "^7.1.4",
     "eslint-plugin-prettier": "^5.4.0",
     "eslint-plugin-react": "^7.37.5",
@@ -69,7 +69,7 @@
     "react-dom": "^19.1.0",
     "sanity": "^3.89.0",
     "styled-components": "^6.1.18",
-    "typescript": "^5.8"
+    "typescript": "^5.5"
   },
   "peerDependencies": {
     "react": "^19",
