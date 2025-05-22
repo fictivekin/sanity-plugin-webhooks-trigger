@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.3.1...v0.4.0) (2025-05-22)
+
+
+### Features
+
+* update deps + upgrade to react 19 ([2e37bd5](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/2e37bd5c52c890661e37464334bb1e90cb1c305d))
+
 ## [0.3.1](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.3.0...v0.3.1) (2024-08-22)
 
 
