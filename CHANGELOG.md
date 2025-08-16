@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.4.1...v0.5.0) (2025-08-16)
+
+
+### Features
+
+* improve responsive styling ([ecd907f](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/ecd907fc7ed39dbcecaafed09efa18c300c72905))
+* update deps + upgrade to sanity 4 ([143d3f0](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/143d3f0feb687ea75b5e22ac191ceed9a93ad557))
+
 ## [0.4.1](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.4.0...v0.4.1) (2025-05-22)
 
 
