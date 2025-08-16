@@ -25,7 +25,7 @@ import {Webhook, WebhooksTriggerConfig} from './types'
 const theme = buildTheme()
 const WEBHOOK_TYPE = 'webhook_triggers'
 const defaultText =
-  'You can here deploy your static website after finishing content edits by manually calling a webhook that triggers a new build of your site. Or simply run a webhook from Sanity!'
+  'Trigger webhooks right from Sanity, whether you need to rebuild a static website after content edits or run any other automated process.'
 
 const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
   const {options} = tool
