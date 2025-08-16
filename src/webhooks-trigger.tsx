@@ -186,8 +186,8 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
       <Container width={2}>
         {/* Intro text */}
         <Box padding={4} marginTop={5}>
-          <Flex gap={4} align="flex-start">
-            <Stack space={4}>
+          <Flex gap={4} align="flex-start" direction={["column", "column", "row"]} justify={["flex-start", "flex-start", "space-between"]}>
+            <Stack space={4} style={{flex: 1, minWidth: 0}}>
               <Heading as="h2" size={3}>
                 Deploy via Webhooks
               </Heading>
@@ -196,34 +196,46 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
               </Text>
             </Stack>
 
-            <Card style={{marginLeft: 'auto'}}>
+            <Box style={{flexShrink: 0}}>
               <Button icon={AddIcon} text="Add Webhook" tone="primary" onClick={handleAddWebhook} />
-            </Card>
+            </Box>
           </Flex>
 
           {/* Has items */}
           {webhooks.length > 0 ? (
-            <Stack space={4} marginTop={6}>
+            <Stack space={4} marginTop={[5, 5, 6]}>
               {webhooks.map((webhook) => (
                 <Card key={webhook._id} padding={3} radius={2} shadow={1}>
-                  <Flex justify="space-between" align="flex-start">
+                  <Flex align="flex-start" direction={["column", "column", "row"]} justify={["flex-start", "flex-start", "space-between"]}>
                     <Stack space={1}>
                       <Heading as="h3" size={1} style={{marginBottom: '0.5em'}}>
                         {webhook.name}
                       </Heading>
 
-                      <Flex gap={1} align="center">
+                      <Box
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: `${webhook.authToken ? 'auto ' : ''}minmax(0, 1fr) auto`,
+                          alignItems: 'center',
+                          columnGap: 4,
+                          width: '100%',
+                        }}
+                      >
                         {webhook.authToken && <TokenIcon fontSize={'1em'} />}
-                        <Text size={1} muted>
-                          {webhook.url} ({webhook.method})
+                        <Text size={1} muted title={webhook.url} textOverflow="ellipsis">
+                          {webhook.url}
                         </Text>
-                      </Flex>
+                        <Text size={1} muted style={{whiteSpace: 'nowrap'}}>
+                          ({webhook.method})
+                        </Text>
+                      </Box>
 
                       {webhook.lastRunTime && webhook.lastRunStatus && (
                         <Flex gap={1} align="center">
                           <ClockIcon
                             fontSize={'1em'}
                             color={webhook.lastRunStatus === 'success' ? 'green' : 'red'}
+                            style={{flexShrink: 0}}
                           />
                           <Text size={1} muted>
                             Last {webhook.lastRunStatus === 'success' ? 'successful' : 'failed'}{' '}
@@ -233,39 +245,39 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
                       )}
                     </Stack>
 
-                    <Flex>
-                      <Button
-                        tone="positive"
-                        onClick={() => handleTriggerWebhook(webhook)}
-                        disabled={triggeringWebhook === webhook._id}
-                        style={{marginRight: '8px'}}
-                      >
-                        {triggeringWebhook === webhook._id ? (
-                          <Spinner size={1} />
-                        ) : (
-                          <Text size={1}>Trigger</Text>
-                        )}
-                      </Button>
-                      <Button
-                        icon={EditIcon}
-                        tone="default"
-                        onClick={() => handleEditWebhook(webhook)}
-                        style={{marginRight: '8px'}}
-                      />
-                      <Button
-                        icon={deletingWebhook === webhook._id ? Spinner : TrashIcon}
-                        tone="default"
-                        onClick={() => handleDeleteWebhook(webhook)}
-                        disabled={deletingWebhook === webhook._id}
-                      />
-                    </Flex>
+                    <Box marginTop={[3, 3, 0]}>
+                      <Flex gap={2} wrap="wrap" justify={["flex-start", "flex-start", "flex-end"]}>
+                        <Button
+                          tone="positive"
+                          onClick={() => handleTriggerWebhook(webhook)}
+                          disabled={triggeringWebhook === webhook._id}
+                        >
+                          {triggeringWebhook === webhook._id ? (
+                            <Spinner size={1} />
+                          ) : (
+                            <Text size={1}>Trigger</Text>
+                          )}
+                        </Button>
+                        <Button
+                          icon={EditIcon}
+                          tone="default"
+                          onClick={() => handleEditWebhook(webhook)}
+                        />
+                        <Button
+                          icon={deletingWebhook === webhook._id ? Spinner : TrashIcon}
+                          tone="default"
+                          onClick={() => handleDeleteWebhook(webhook)}
+                          disabled={deletingWebhook === webhook._id}
+                        />
+                      </Flex>
+                    </Box>
                   </Flex>
                 </Card>
               ))}
             </Stack>
           ) : (
             // No items: Show a message with a button
-            <Card padding={4} radius={2} shadow={1} marginTop={6}>
+            <Card padding={4} radius={2} shadow={1} marginTop={[5, 5, 6]}>
               <Flex direction="column" align="center" gap={3}>
                 <Card paddingY={5}>
                   <Text>No webhook yet</Text>

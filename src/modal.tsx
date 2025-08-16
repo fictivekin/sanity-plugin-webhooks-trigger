@@ -67,7 +67,7 @@ const WebhookFormModal = ({
               />
             </Stack>
 
-            <Grid columns={2} gap={3}>
+            <Grid columns={[1, 1, 2]} gap={4}>
               <Stack space={3}>
                 <Label htmlFor="webhook-method">Method</Label>
                 <Select
@@ -81,7 +81,7 @@ const WebhookFormModal = ({
                   <option value="GET">GET</option>
                 </Select>
               </Stack>
-              <Stack width="50%" space={3}>
+              <Stack space={3}>
                 <Label htmlFor="webhook-auth-token">Auth Token (Optional)</Label>
                 <TextInput
                   id="webhook-auth-token"
