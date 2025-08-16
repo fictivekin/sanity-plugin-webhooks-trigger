@@ -5,6 +5,7 @@ import type {WebhooksTriggerOptions} from './types'
 import WebhooksTrigger from './webhooks-trigger'
 
 /**
+ * @public
  * Usage in `sanity.config.ts` (or .js)
  *
  * ```ts
