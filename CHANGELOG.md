@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.5.0...v0.6.0) (2025-12-16)
+
+
+### Features
+
+* add ability to trigger all webhooks ([dce2eab](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/dce2eab82ac36d4336dacd05665b1264f385ea47))
+
 ## [0.5.0](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.4.1...v0.5.0) (2025-08-16)
 
 
