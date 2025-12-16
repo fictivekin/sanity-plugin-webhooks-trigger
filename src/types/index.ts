@@ -7,6 +7,7 @@ export interface WebhooksTriggerOptions {
   text?: string
   encryptionSalt?: string
   githubEventType?: string
+  triggerAll?: boolean
 }
 
 export interface WebhooksTriggerConfig {

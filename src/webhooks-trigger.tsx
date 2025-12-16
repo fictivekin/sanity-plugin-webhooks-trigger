@@ -36,6 +36,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
   const [webhooks, setWebhooks] = useState<Webhook[]>([])
   const [showModal, setShowModal] = useState(false)
   const [triggeringWebhook, setTriggeringWebhook] = useState<string | null>(null)
+  const [triggeringAll, setTriggeringAll] = useState(false)
   const [editingWebhook, setEditingWebhook] = useState<Webhook | null>(null)
   const [deletingWebhook, setDeletingWebhook] = useState<string | null>(null)
 
@@ -149,6 +150,23 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
   )
 
   /**
+   * Handle triggering all webhooks
+   */
+  const handleTriggerAllWebhooks = useCallback(
+    async () => {
+      setTriggeringAll(true)
+
+      // Trigger all webhooks in sequence
+      for (const webhook of webhooks) {
+        await handleTriggerWebhook(webhook)
+      }
+
+      setTriggeringAll(false)
+    },
+    [webhooks, handleTriggerWebhook],
+  )
+
+  /**
    * Delete a Webhook
    */
   const handleDeleteWebhook = useCallback(
@@ -203,9 +221,10 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
 
           {/* Has items */}
           {webhooks.length > 0 ? (
-            <Stack space={4} marginTop={[5, 5, 6]}>
-              {webhooks.map((webhook) => (
-                <Card key={webhook._id} padding={3} radius={2} shadow={1}>
+            <>
+              <Stack space={4} marginTop={[5, 5, 6]}>
+                {webhooks.map((webhook) => (
+                  <Card key={webhook._id} padding={3} radius={2} shadow={1}>
                   <Flex align="flex-start" direction={["column", "column", "row"]} justify={["flex-start", "flex-start", "space-between"]}>
                     <Stack space={1}>
                       <Heading as="h3" size={1} style={{marginBottom: '0.5em'}}>
@@ -274,7 +293,24 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
                   </Flex>
                 </Card>
               ))}
-            </Stack>
+              </Stack>
+
+              {options.triggerAll !== false && webhooks.length > 1 && (
+                <Flex marginTop={4} justify="flex-end">
+                  <Button
+                    tone="positive"
+                    onClick={handleTriggerAllWebhooks}
+                    disabled={triggeringAll || triggeringWebhook !== null}
+                  >
+                    {triggeringAll ? (
+                      <Spinner size={1} />
+                    ) : (
+                      <Text size={1}>Trigger All</Text>
+                    )}
+                  </Button>
+                </Flex>
+              )}
+            </>
           ) : (
             // No items: Show a message with a button
             <Card padding={4} radius={2} shadow={1} marginTop={[5, 5, 6]}>
