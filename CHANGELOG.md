@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.6.0...v0.7.0) (2025-12-16)
+
+
+### Features
+
+* downgrade minimum node version ([9744b41](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/9744b4161732e9e9f1b8e553f38fa097607470d8))
+* downgrade minimum node version ([2c804fe](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/2c804fe3e5ae505fd14a6c63166e50482ee8bac2))
+
 ## [0.6.0](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.5.0...v0.6.0) (2025-12-16)
 
 
