@@ -76,7 +76,7 @@
     "sanity": "^3 || ^4 || ^5"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=18"
   },
   "publishConfig": {
     "exports": {
