@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -12,41 +11,12 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    steps:
-      # Release
-      - name: Create release
-        uses: googleapis/release-please-action@v4
-        id: release
-        with:
-          token: ${{ secrets.GH_TOKEN }}
-          release-type: node
-
-      # Publication steps
-      - uses: actions/checkout@v6
-        if: ${{ steps.release.outputs.release_created }}
-
-      - uses: actions/setup-node@v6
-        if: ${{ steps.release.outputs.release_created }}
-        with:
-          node-version: 22
-          registry-url: 'https://registry.npmjs.org'
-
-        # Publish
-      - run: npm ci
-        if: ${{ steps.release.outputs.release_created }}
-
-      - run: npm publish
-        if: ${{ steps.release.outputs.release_created }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  manual-publish:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-node@v6
         with:
@@ -55,6 +25,8 @@ jobs:
 
       - run: npm ci
 
-      - run: npm publish
+      - name: Release
+        run: npx semantic-release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
