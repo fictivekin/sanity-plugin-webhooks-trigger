@@ -22,6 +22,7 @@ export interface Webhook {
   url: string | undefined
   method: 'GET' | 'POST' | undefined
   authToken?: string
+  githubEventType?: string
   lastRunTime?: string
   lastRunStatus?: 'success' | 'failed'
 }

@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-bind */
 import {AddIcon, ClockIcon, EditIcon, TrashIcon} from '@sanity/icons'
 import {TokenIcon} from '@sanity/icons'
 import {
@@ -18,6 +17,7 @@ import {customAlphabet} from 'nanoid'
 import {ReactElement, useCallback, useEffect, useState} from 'react'
 import {useClient} from 'sanity'
 
+import {buildWebhookRequestOptions, isGithubWebhookUrl} from './github-dispatch'
 import WebhookFormModal from './modal'
 import {decryptToken, encryptToken} from './security'
 import {Webhook, WebhooksTriggerConfig} from './types'
@@ -98,29 +98,21 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
       if (webhook.url) {
         setTriggeringWebhook(webhook._id)
 
-        const hostname = new URL(webhook.url).hostname
-        const isGithubAction = hostname === 'github.com' || hostname.endsWith('.github.com')
-
         try {
-          const response = await fetch(webhook.url, {
-            method: webhook.method,
-            headers: {
-              ...(webhook.authToken &&
-                encryptionSalt && {
-                  Authorization: `Bearer ${decryptToken(webhook.authToken, encryptionSalt)}`,
-                }),
-              ...(isGithubAction && {
-                Accept: 'application/vnd.github+json',
-                'X-GitHub-Api-Version': '2022-11-28',
-              }),
-            },
-            body: JSON.stringify({
-              ...(isGithubAction && {
-                // eslint-disable-next-line camelcase
-                event_type: options.githubEventType,
-              }),
+          const authToken =
+            webhook.authToken && encryptionSalt
+              ? decryptToken(webhook.authToken, encryptionSalt)
+              : undefined
+
+          const response = await fetch(
+            webhook.url,
+            buildWebhookRequestOptions({
+              authToken,
+              githubEventType: webhook.githubEventType || options.githubEventType,
+              method: webhook.method,
+              url: webhook.url,
             }),
-          })
+          )
 
           await client
             .patch(webhook._id)
@@ -152,19 +144,16 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
   /**
    * Handle triggering all webhooks
    */
-  const handleTriggerAllWebhooks = useCallback(
-    async () => {
-      setTriggeringAll(true)
+  const handleTriggerAllWebhooks = useCallback(async () => {
+    setTriggeringAll(true)
 
-      // Trigger all webhooks in sequence
-      for (const webhook of webhooks) {
-        await handleTriggerWebhook(webhook)
-      }
+    // Trigger all webhooks in sequence
+    for (const webhook of webhooks) {
+      await handleTriggerWebhook(webhook)
+    }
 
-      setTriggeringAll(false)
-    },
-    [webhooks, handleTriggerWebhook],
-  )
+    setTriggeringAll(false)
+  }, [webhooks, handleTriggerWebhook])
 
   /**
    * Delete a Webhook
@@ -204,7 +193,12 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
       <Container width={2}>
         {/* Intro text */}
         <Box padding={4} marginTop={5}>
-          <Flex gap={4} align="flex-start" direction={["column", "column", "row"]} justify={["flex-start", "flex-start", "space-between"]}>
+          <Flex
+            gap={4}
+            align="flex-start"
+            direction={['column', 'column', 'row']}
+            justify={['flex-start', 'flex-start', 'space-between']}
+          >
             <Stack space={4} style={{flex: 1, minWidth: 0}}>
               <Heading as="h2" size={3}>
                 Deploy via Webhooks
@@ -225,74 +219,88 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
               <Stack space={4} marginTop={[5, 5, 6]}>
                 {webhooks.map((webhook) => (
                   <Card key={webhook._id} padding={3} radius={2} shadow={1}>
-                  <Flex align="flex-start" direction={["column", "column", "row"]} justify={["flex-start", "flex-start", "space-between"]}>
-                    <Stack space={1}>
-                      <Heading as="h3" size={1} style={{marginBottom: '0.5em'}}>
-                        {webhook.name}
-                      </Heading>
+                    <Flex
+                      align="flex-start"
+                      direction={['column', 'column', 'row']}
+                      justify={['flex-start', 'flex-start', 'space-between']}
+                    >
+                      <Stack space={1}>
+                        <Heading as="h3" size={1} style={{marginBottom: '0.5em'}}>
+                          {webhook.name}
+                        </Heading>
 
-                      <Box
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: `${webhook.authToken ? 'auto ' : ''}minmax(0, 1fr) auto`,
-                          alignItems: 'center',
-                          columnGap: 4,
-                          width: '100%',
-                        }}
-                      >
-                        {webhook.authToken && <TokenIcon fontSize={'1em'} />}
-                        <Text size={1} muted title={webhook.url} textOverflow="ellipsis">
-                          {webhook.url}
-                        </Text>
-                        <Text size={1} muted style={{whiteSpace: 'nowrap'}}>
-                          ({webhook.method})
-                        </Text>
-                      </Box>
-
-                      {webhook.lastRunTime && webhook.lastRunStatus && (
-                        <Flex gap={1} align="center">
-                          <ClockIcon
-                            fontSize={'1em'}
-                            color={webhook.lastRunStatus === 'success' ? 'green' : 'red'}
-                            style={{flexShrink: 0}}
-                          />
-                          <Text size={1} muted>
-                            Last {webhook.lastRunStatus === 'success' ? 'successful' : 'failed'}{' '}
-                            run: {new Date(webhook.lastRunTime).toLocaleString()}
-                          </Text>
-                        </Flex>
-                      )}
-                    </Stack>
-
-                    <Box marginTop={[3, 3, 0]}>
-                      <Flex gap={2} wrap="wrap" justify={["flex-start", "flex-start", "flex-end"]}>
-                        <Button
-                          tone="positive"
-                          onClick={() => handleTriggerWebhook(webhook)}
-                          disabled={triggeringWebhook === webhook._id}
+                        <Box
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: `${webhook.authToken ? 'auto ' : ''}minmax(0, 1fr) auto`,
+                            alignItems: 'center',
+                            columnGap: 4,
+                            width: '100%',
+                          }}
                         >
-                          {triggeringWebhook === webhook._id ? (
-                            <Spinner size={1} />
-                          ) : (
-                            <Text size={1}>Trigger</Text>
-                          )}
-                        </Button>
-                        <Button
-                          icon={EditIcon}
-                          tone="default"
-                          onClick={() => handleEditWebhook(webhook)}
-                        />
-                        <Button
-                          icon={deletingWebhook === webhook._id ? Spinner : TrashIcon}
-                          tone="default"
-                          onClick={() => handleDeleteWebhook(webhook)}
-                          disabled={deletingWebhook === webhook._id}
-                        />
-                      </Flex>
-                    </Box>
-                  </Flex>
-                </Card>
-              ))}
+                          {webhook.authToken && <TokenIcon fontSize={'1em'} />}
+                          <Text size={1} muted title={webhook.url} textOverflow="ellipsis">
+                            {webhook.url}
+                          </Text>
+                          <Text size={1} muted style={{whiteSpace: 'nowrap'}}>
+                            ({webhook.method})
+                          </Text>
+                        </Box>
+
+                        {isGithubWebhookUrl(webhook.url) && webhook.githubEventType && (
+                          <Text size={1} muted>
+                            GitHub event type: {webhook.githubEventType}
+                          </Text>
+                        )}
+
+                        {webhook.lastRunTime && webhook.lastRunStatus && (
+                          <Flex gap={1} align="center">
+                            <ClockIcon
+                              fontSize={'1em'}
+                              color={webhook.lastRunStatus === 'success' ? 'green' : 'red'}
+                              style={{flexShrink: 0}}
+                            />
+                            <Text size={1} muted>
+                              Last {webhook.lastRunStatus === 'success' ? 'successful' : 'failed'}{' '}
+                              run: {new Date(webhook.lastRunTime).toLocaleString()}
+                            </Text>
+                          </Flex>
+                        )}
+                      </Stack>
+
+                      <Box marginTop={[3, 3, 0]}>
+                        <Flex
+                          gap={2}
+                          wrap="wrap"
+                          justify={['flex-start', 'flex-start', 'flex-end']}
+                        >
+                          <Button
+                            tone="positive"
+                            onClick={() => handleTriggerWebhook(webhook)}
+                            disabled={triggeringWebhook === webhook._id}
+                          >
+                            {triggeringWebhook === webhook._id ? (
+                              <Spinner size={1} />
+                            ) : (
+                              <Text size={1}>Trigger</Text>
+                            )}
+                          </Button>
+                          <Button
+                            icon={EditIcon}
+                            tone="default"
+                            onClick={() => handleEditWebhook(webhook)}
+                          />
+                          <Button
+                            icon={deletingWebhook === webhook._id ? Spinner : TrashIcon}
+                            tone="default"
+                            onClick={() => handleDeleteWebhook(webhook)}
+                            disabled={deletingWebhook === webhook._id}
+                          />
+                        </Flex>
+                      </Box>
+                    </Flex>
+                  </Card>
+                ))}
               </Stack>
 
               {options.triggerAll !== false && webhooks.length > 1 && (
@@ -302,11 +310,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
                     onClick={handleTriggerAllWebhooks}
                     disabled={triggeringAll || triggeringWebhook !== null}
                   >
-                    {triggeringAll ? (
-                      <Spinner size={1} />
-                    ) : (
-                      <Text size={1}>Trigger All</Text>
-                    )}
+                    {triggeringAll ? <Spinner size={1} /> : <Text size={1}>Trigger All</Text>}
                   </Button>
                 </Flex>
               )}

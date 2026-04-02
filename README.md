@@ -8,7 +8,6 @@
 
 ![screenshot](https://github.com/flayks/sanity-plugin-webhooks-trigger/assets/273716/7dfdf824-aa87-45a2-9e6c-66919c18081e)
 
-
 ## Motivation
 
 Instead of rebuilding your site every single time a document is published using the GROQ-powered webhooks, just do it when you (or your client) are done editing content!
@@ -40,8 +39,8 @@ bun i sanity-plugin-webhooks-trigger
 Add it as a plugin in `sanity.config.ts` (or .js):
 
 ```ts
-import { defineConfig } from 'sanity'
-import { webhooksTrigger } from 'sanity-plugin-webhooks-trigger'
+import {defineConfig} from 'sanity'
+import {webhooksTrigger} from 'sanity-plugin-webhooks-trigger'
 
 export default defineConfig({
   //...
@@ -50,14 +49,16 @@ export default defineConfig({
       // title: 'Deploy',
       // text: 'Custom text',
       // encryptionSalt: 'replace-me-with-a-strong-string',
-      // /** You can customize the event type name to trigger on your Github workflows */
+      // /** Default event type for GitHub repository dispatch webhooks */
       // githubEventType: 'webhook-trigger',
       // /** Disable the "Trigger All" button when there are multiple webhooks */
       // triggerAll: false,
-    })
+    }),
   ],
 })
 ```
+
+For GitHub repository dispatch endpoints, each webhook can also define its own custom event type in the Sanity UI. The webhook-specific value takes precedence over the plugin-level `githubEventType`, which then falls back to `webhook-trigger`.
 
 ⚠️ If you are using an auth token with your webhook, it is strongly recommended to use an encryption salt, otherwise it could be [exposed](https://medium.com/poka-techblog/the-best-way-to-store-secrets-in-your-app-is-not-to-store-secrets-in-your-app-308a6807d3ed)!
 You can generate one using `openssl rand -hex 64` or any other method.
