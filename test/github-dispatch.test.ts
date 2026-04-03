@@ -5,25 +5,12 @@ import {
   buildWebhookRequestOptions,
   DEFAULT_GITHUB_EVENT_TYPE,
   isGithubWebhookUrl,
-  resolveGithubEventType,
 } from '../src/github-dispatch.ts'
 
 test('detects GitHub webhook URLs', () => {
   assert.equal(isGithubWebhookUrl('https://api.github.com/repos/acme/repo/dispatches'), true)
   assert.equal(isGithubWebhookUrl('https://example.com/webhook'), false)
   assert.equal(isGithubWebhookUrl('not-a-url'), false)
-})
-
-test('resolves the webhook-specific GitHub event type before the plugin default', () => {
-  assert.equal(resolveGithubEventType('webhook-specific', 'plugin-default'), 'webhook-specific')
-})
-
-test('falls back to the plugin GitHub event type when the webhook has none', () => {
-  assert.equal(resolveGithubEventType(undefined, 'plugin-default'), 'plugin-default')
-})
-
-test('falls back to the built-in GitHub event type when nothing is configured', () => {
-  assert.equal(resolveGithubEventType(undefined, undefined), DEFAULT_GITHUB_EVENT_TYPE)
 })
 
 test('uses the provided GitHub event type in the request body', () => {
@@ -35,6 +22,17 @@ test('uses the provided GitHub event type in the request body', () => {
 
   assert.deepEqual(JSON.parse(String(requestOptions.body)), {
     event_type: 'webhook-specific',
+  })
+})
+
+test('falls back to the built-in GitHub event type when no event type is provided', () => {
+  const requestOptions = buildWebhookRequestOptions({
+    method: 'POST',
+    url: 'https://api.github.com/repos/acme/repo/dispatches',
+  })
+
+  assert.deepEqual(JSON.parse(String(requestOptions.body)), {
+    event_type: DEFAULT_GITHUB_EVENT_TYPE,
   })
 })
 

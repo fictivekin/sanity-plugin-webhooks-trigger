@@ -5,6 +5,7 @@ import {isGithubWebhookUrl} from './github-dispatch'
 import {Webhook, WebhookFormModalProps} from './types'
 
 const WebhookFormModal = ({
+  defaultGithubEventType,
   webhook,
   onSubmit,
   onClose,
@@ -108,12 +109,12 @@ const WebhookFormModal = ({
                 <TextInput
                   id="webhook-github-event-type"
                   value={githubEventType}
-                  placeholder="webhook-trigger"
+                  placeholder={defaultGithubEventType}
                   onChange={(event) => setGithubEventType(event.currentTarget.value || undefined)}
                 />
                 <Text size={1} muted>
-                  Used for GitHub repository dispatch requests. If omitted, the plugin default is
-                  used.
+                  Used for GitHub repository dispatch requests. If omitted, this webhook uses{' '}
+                  {defaultGithubEventType}.
                 </Text>
               </Stack>
             )}

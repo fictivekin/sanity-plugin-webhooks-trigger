@@ -17,7 +17,11 @@ import {customAlphabet} from 'nanoid'
 import {ReactElement, useCallback, useEffect, useState} from 'react'
 import {useClient} from 'sanity'
 
-import {buildWebhookRequestOptions, isGithubWebhookUrl} from './github-dispatch'
+import {
+  buildWebhookRequestOptions,
+  DEFAULT_GITHUB_EVENT_TYPE,
+  isGithubWebhookUrl,
+} from './github-dispatch'
 import WebhookFormModal from './modal'
 import {decryptToken, encryptToken} from './security'
 import {Webhook, WebhooksTriggerConfig} from './types'
@@ -30,6 +34,7 @@ const defaultText =
 const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
   const {options} = tool
   const encryptionSalt = options.encryptionSalt
+  const defaultGithubEventType = options.githubEventType || DEFAULT_GITHUB_EVENT_TYPE
 
   const client = useClient({apiVersion: '2021-06-07'})
 
@@ -108,7 +113,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
             webhook.url,
             buildWebhookRequestOptions({
               authToken,
-              githubEventType: webhook.githubEventType || options.githubEventType,
+              githubEventType: webhook.githubEventType || defaultGithubEventType,
               method: webhook.method,
               url: webhook.url,
             }),
@@ -138,7 +143,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
         setTriggeringWebhook(null)
       }
     },
-    [client, fetchWebhooks, encryptionSalt, options.githubEventType],
+    [client, defaultGithubEventType, fetchWebhooks, encryptionSalt],
   )
 
   /**
@@ -336,6 +341,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
 
         {showModal && (
           <WebhookFormModal
+            defaultGithubEventType={defaultGithubEventType}
             webhook={editingWebhook || {}}
             onClose={handleCloseModal}
             onSubmit={handleSubmitWebhook}

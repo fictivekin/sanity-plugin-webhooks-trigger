@@ -28,6 +28,7 @@ export interface Webhook {
 }
 
 export interface WebhookFormModalProps {
+  defaultGithubEventType: string
   webhook: Partial<Webhook>
   onClose: () => void
   onSubmit: (webhook: Partial<Webhook>) => void
