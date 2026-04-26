@@ -22,11 +22,13 @@ export interface Webhook {
   url: string | undefined
   method: 'GET' | 'POST' | undefined
   authToken?: string
+  githubEventType?: string
   lastRunTime?: string
   lastRunStatus?: 'success' | 'failed'
 }
 
 export interface WebhookFormModalProps {
+  defaultGithubEventType: string
   webhook: Partial<Webhook>
   onClose: () => void
   onSubmit: (webhook: Partial<Webhook>) => void

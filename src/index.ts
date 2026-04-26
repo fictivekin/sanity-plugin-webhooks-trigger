@@ -33,7 +33,7 @@ export const webhooksTrigger = definePlugin<WebhooksTriggerOptions | void>((conf
         options: {
           encryptionSalt,
           text,
-          githubEventType: githubEventType || 'webhook-trigger',
+          githubEventType,
         },
         router: route.create('/*'),
       },

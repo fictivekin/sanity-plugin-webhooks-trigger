@@ -1,10 +1,11 @@
-/* eslint-disable react/jsx-no-bind */
-import {Box, Button, Dialog, Grid, Label, Select, Spinner, Stack, TextInput} from '@sanity/ui'
+import {Box, Button, Dialog, Grid, Label, Select, Spinner, Stack, Text, TextInput} from '@sanity/ui'
 import {FormEvent, ReactElement, useCallback, useState} from 'react'
 
+import {isGithubWebhookUrl} from './github-dispatch'
 import {Webhook, WebhookFormModalProps} from './types'
 
 const WebhookFormModal = ({
+  defaultGithubEventType,
   webhook,
   onSubmit,
   onClose,
@@ -14,7 +15,11 @@ const WebhookFormModal = ({
   const [url, setUrl] = useState<Webhook['url']>(webhook.url || undefined)
   const [method, setMethod] = useState<Webhook['method']>(webhook.method || undefined)
   const [authToken, setAuthToken] = useState<Webhook['authToken']>(webhook.authToken || undefined)
+  const [githubEventType, setGithubEventType] = useState<Webhook['githubEventType']>(
+    webhook.githubEventType || undefined,
+  )
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const showGithubEventType = isGithubWebhookUrl(url)
 
   const buttonText = webhook._id ? 'Save changes' : 'Add Webhook'
 
@@ -31,12 +36,17 @@ const WebhookFormModal = ({
       if (authToken) {
         updatedWebhook.authToken = authToken
       }
+      if (githubEventType) {
+        updatedWebhook.githubEventType = githubEventType
+      } else {
+        delete updatedWebhook.githubEventType
+      }
 
       await onSubmit(updatedWebhook)
 
       setIsSubmitting(false)
     },
-    [name, url, method, authToken, onSubmit, webhook],
+    [authToken, githubEventType, method, name, onSubmit, url, webhook],
   )
 
   return (
@@ -92,6 +102,22 @@ const WebhookFormModal = ({
                 />
               </Stack>
             </Grid>
+
+            {showGithubEventType && (
+              <Stack space={3}>
+                <Label htmlFor="webhook-github-event-type">GitHub Event Type (Optional)</Label>
+                <TextInput
+                  id="webhook-github-event-type"
+                  value={githubEventType}
+                  placeholder={defaultGithubEventType}
+                  onChange={(event) => setGithubEventType(event.currentTarget.value || undefined)}
+                />
+                <Text size={1} muted>
+                  Used for GitHub repository dispatch requests. If omitted, this webhook uses{' '}
+                  {defaultGithubEventType}.
+                </Text>
+              </Stack>
+            )}
 
             <Button
               type="submit"
