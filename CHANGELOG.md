@@ -1,3 +1,15 @@
+# [0.8.0](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.7.0...v0.8.0) (2026-04-26)
+
+
+### Bug Fixes
+
+* allow to remove a custom githubEventType if empty ([434d835](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/434d835551ab9f9b1d71f3b016c17ee2d4488c43))
+
+
+### Features
+
+* allow for the event type to be specified on the individual webhook config ([7b11f01](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/7b11f01c790b7c5de636cb7fed0dfb521f4bf5dd))
+
 # Changelog
 
 ## [0.7.0](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.6.0...v0.7.0) (2025-12-16)
