@@ -70,7 +70,11 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
 
       if (webhook._id) {
         // Edit webhook
-        await client.patch(webhook._id).set(webhook).commit()
+        let patch = client.patch(webhook._id).set(webhook)
+        if (!webhook.githubEventType) {
+          patch = patch.unset(['githubEventType'])
+        }
+        await patch.commit()
       } else {
         // Create new webhook
         await client.create({
