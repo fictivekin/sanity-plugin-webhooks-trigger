@@ -21,7 +21,7 @@ import WebhooksTrigger from './webhooks-trigger'
  * ```
  */
 export const webhooksTrigger = definePlugin<WebhooksTriggerOptions | void>((config) => {
-  const {name, title, encryptionSalt, text, githubEventType} = config || {}
+  const {name, title, icon, encryptionSalt, text, githubEventType} = config || {}
 
   return {
     name: 'sanity-plugin-webhooks-trigger',
@@ -29,12 +29,9 @@ export const webhooksTrigger = definePlugin<WebhooksTriggerOptions | void>((conf
       {
         name: name || 'webhooks-trigger',
         title: title || 'Deploy',
+        icon,
         component: WebhooksTrigger,
-        options: {
-          encryptionSalt,
-          text,
-          githubEventType,
-        },
+        options: {encryptionSalt, text, githubEventType},
         router: route.create('/*'),
       },
     ],
