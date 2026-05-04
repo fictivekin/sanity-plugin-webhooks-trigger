@@ -1,8 +1,8 @@
-import React from 'react'
+import type {ReactNode} from 'react'
 
 export interface WebhooksTriggerOptions {
   name?: string
-  icon?: React.ReactNode
+  icon?: ReactNode
   title?: string
   text?: string
   encryptionSalt?: string
@@ -24,7 +24,7 @@ export interface Webhook {
   authToken?: string
   githubEventType?: string
   lastRunTime?: string
-  lastRunStatus?: 'success' | 'failed'
+  lastRunStatus?: 'success' | 'failed' | 'triggered'
 }
 
 export interface WebhookFormModalProps {
