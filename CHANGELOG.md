@@ -1,3 +1,10 @@
+## [0.8.1](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.8.0...v0.8.1) (2026-05-04)
+
+
+### Bug Fixes
+
+* handle CORS-restricted webhook endpoints gracefully ([54785b9](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/54785b9aa9a7ee265de7315b0229b6f0184e4c94))
+
 # [0.8.0](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.7.0...v0.8.0) (2026-04-26)
 
 
