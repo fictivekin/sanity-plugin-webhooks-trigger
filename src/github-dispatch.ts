@@ -26,27 +26,22 @@ export function buildWebhookRequestOptions({
   method,
   url,
 }: BuildWebhookRequestOptionsArgs): RequestInit {
+  const isGithub = isGithubWebhookUrl(url)
   const headers: Record<string, string> = {}
 
-  if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`
-  }
-
-  if (isGithubWebhookUrl(url)) {
+  if (authToken) headers.Authorization = `Bearer ${authToken}`
+  if (isGithub) {
     headers.Accept = 'application/vnd.github+json'
     headers['X-GitHub-Api-Version'] = '2022-11-28'
-
-    return {
-      method,
-      headers,
-      body: JSON.stringify({
-        event_type: githubEventType || DEFAULT_GITHUB_EVENT_TYPE,
-      }),
-    }
   }
 
   return {
     method,
-    ...(Object.keys(headers).length > 0 && {headers}),
+    headers,
+    // Endpoints rarely include CORS headers; lets 'no-cors' reach the server without the browser throwing on the response
+    ...(isGithub ? {} : {mode: 'no-cors'}),
+    ...(isGithub && {
+      body: JSON.stringify({event_type: githubEventType || DEFAULT_GITHUB_EVENT_TYPE}),
+    }),
   }
 }

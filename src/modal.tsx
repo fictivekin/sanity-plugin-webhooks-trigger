@@ -32,14 +32,13 @@ const WebhookFormModal = ({
 
       setIsSubmitting(true)
 
-      const updatedWebhook = {...webhook, name, url, method}
-      if (authToken) {
-        updatedWebhook.authToken = authToken
-      }
-      if (githubEventType) {
-        updatedWebhook.githubEventType = githubEventType
-      } else {
-        delete updatedWebhook.githubEventType
+      const updatedWebhook: Partial<Webhook> = {
+        ...webhook,
+        name,
+        url,
+        method,
+        ...(authToken && {authToken}),
+        ...(githubEventType && {githubEventType}),
       }
 
       await onSubmit(updatedWebhook)

@@ -1,5 +1,4 @@
-import {AddIcon, ClockIcon, EditIcon, TrashIcon} from '@sanity/icons'
-import {TokenIcon} from '@sanity/icons'
+import {AddIcon, ClockIcon, EditIcon, TokenIcon, TrashIcon} from '@sanity/icons'
 import {
   Box,
   Button,
@@ -14,7 +13,7 @@ import {
 } from '@sanity/ui'
 import {buildTheme} from '@sanity/ui/theme'
 import {customAlphabet} from 'nanoid'
-import {ReactElement, useCallback, useEffect, useState} from 'react'
+import {useCallback, useEffect, useState, type ReactElement} from 'react'
 import {useClient} from 'sanity'
 
 import {
@@ -28,13 +27,23 @@ import {Webhook, WebhooksTriggerConfig} from './types'
 
 const theme = buildTheme()
 const WEBHOOK_TYPE = 'webhook_triggers'
+const generateId = customAlphabet(
+  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+  12,
+)
 const defaultText =
   'Trigger webhooks right from Sanity, whether you need to rebuild a static website after content edits or run any other automated process.'
 
+const RUN_STATUS_CONFIG = {
+  success: {color: 'green', label: 'successful'},
+  triggered: {color: 'orange', label: 'triggered'},
+  failed: {color: 'red', label: 'failed'},
+} as const
+
 const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
   const {options} = tool
-  const encryptionSalt = options.encryptionSalt
-  const defaultGithubEventType = options.githubEventType || DEFAULT_GITHUB_EVENT_TYPE
+  const {encryptionSalt, text, githubEventType, triggerAll} = options
+  const defaultGithubEventType = githubEventType || DEFAULT_GITHUB_EVENT_TYPE
 
   const client = useClient({apiVersion: '2021-06-07'})
 
@@ -79,7 +88,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
         // Create new webhook
         await client.create({
           _type: WEBHOOK_TYPE,
-          _id: `${WEBHOOK_TYPE}.${customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 12)()}`,
+          _id: `${WEBHOOK_TYPE}.${generateId()}`,
           ...webhook,
         })
       }
@@ -100,52 +109,47 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
   }, [])
 
   /**
-   * Handle the Webhook triggering
+   * Trigger a single webhook and record its status
    */
   const handleTriggerWebhook = useCallback(
     async (webhook: Webhook) => {
-      if (webhook.url) {
-        setTriggeringWebhook(webhook._id)
+      if (!webhook.url) return
+      setTriggeringWebhook(webhook._id)
 
-        try {
-          const authToken =
-            webhook.authToken && encryptionSalt
-              ? decryptToken(webhook.authToken, encryptionSalt)
-              : undefined
+      let lastRunStatus: Webhook['lastRunStatus'] = 'failed'
 
-          const response = await fetch(
-            webhook.url,
-            buildWebhookRequestOptions({
-              authToken,
-              githubEventType: webhook.githubEventType || defaultGithubEventType,
-              method: webhook.method,
-              url: webhook.url,
-            }),
-          )
+      try {
+        const authToken =
+          webhook.authToken && encryptionSalt
+            ? decryptToken(webhook.authToken, encryptionSalt)
+            : undefined
 
-          await client
-            .patch(webhook._id)
-            .set({
-              lastRunTime: new Date().toISOString(),
-              lastRunStatus: response.ok ? 'success' : 'failed',
-            })
-            .commit()
-        } catch (error) {
-          console.error('Failed to trigger webhook:', error)
+        // Non-GitHub endpoints rarely support CORS. buildWebhookRequestOptions
+        // handles it with mode: 'no-cors', making the response opaque — so we
+        // mark those as 'triggered' (sent successfully, outcome unknown).
+        const isGithub = isGithubWebhookUrl(webhook.url)
+        const response = await fetch(
+          webhook.url,
+          buildWebhookRequestOptions({
+            authToken,
+            githubEventType: webhook.githubEventType || defaultGithubEventType,
+            method: webhook.method,
+            url: webhook.url,
+          }),
+        )
 
-          await client
-            .patch(webhook._id)
-            .set({
-              lastRunTime: new Date().toISOString(),
-              lastRunStatus: 'failed',
-            })
-            .commit()
-        }
-
-        // Refresh the list to show updated status
-        fetchWebhooks()
-        setTriggeringWebhook(null)
+        lastRunStatus = isGithub ? (response.ok ? 'success' : 'failed') : 'triggered'
+      } catch (error) {
+        console.error('Failed to trigger webhook:', error)
       }
+
+      await client
+        .patch(webhook._id)
+        .set({lastRunTime: new Date().toISOString(), lastRunStatus})
+        .commit()
+
+      fetchWebhooks()
+      setTriggeringWebhook(null)
     },
     [client, defaultGithubEventType, fetchWebhooks, encryptionSalt],
   )
@@ -213,7 +217,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
                 Deploy via Webhooks
               </Heading>
               <Text size={2} style={{maxWidth: '70ch'}}>
-                {options.text || defaultText}
+                {text || defaultText}
               </Text>
             </Stack>
 
@@ -266,12 +270,12 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
                           <Flex gap={1} align="center">
                             <ClockIcon
                               fontSize={'1em'}
-                              color={webhook.lastRunStatus === 'success' ? 'green' : 'red'}
+                              color={RUN_STATUS_CONFIG[webhook.lastRunStatus].color}
                               style={{flexShrink: 0}}
                             />
                             <Text size={1} muted>
-                              Last {webhook.lastRunStatus === 'success' ? 'successful' : 'failed'}{' '}
-                              run: {new Date(webhook.lastRunTime).toLocaleString()}
+                              Last {RUN_STATUS_CONFIG[webhook.lastRunStatus].label} run:{' '}
+                              {new Date(webhook.lastRunTime).toLocaleString()}
                             </Text>
                           </Flex>
                         )}
@@ -287,13 +291,9 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
                             tone="positive"
                             onClick={() => handleTriggerWebhook(webhook)}
                             disabled={triggeringWebhook === webhook._id}
-                          >
-                            {triggeringWebhook === webhook._id ? (
-                              <Spinner size={1} />
-                            ) : (
-                              <Text size={1}>Trigger</Text>
-                            )}
-                          </Button>
+                            text={triggeringWebhook === webhook._id ? undefined : 'Trigger'}
+                            icon={triggeringWebhook === webhook._id ? Spinner : undefined}
+                          />
                           <Button
                             icon={EditIcon}
                             tone="default"
@@ -312,15 +312,15 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
                 ))}
               </Stack>
 
-              {options.triggerAll !== false && webhooks.length > 1 && (
+              {triggerAll !== false && webhooks.length > 1 && (
                 <Flex marginTop={4} justify="flex-end">
                   <Button
                     tone="positive"
                     onClick={handleTriggerAllWebhooks}
                     disabled={triggeringAll || triggeringWebhook !== null}
-                  >
-                    {triggeringAll ? <Spinner size={1} /> : <Text size={1}>Trigger All</Text>}
-                  </Button>
+                    text={triggeringAll ? undefined : 'Trigger All'}
+                    icon={triggeringAll ? Spinner : undefined}
+                  />
                 </Flex>
               )}
             </>
