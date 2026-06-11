@@ -5,6 +5,13 @@
 
 * support sanity v6 peer dependency ([9254dc7](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/9254dc7afef181fea28f177eb2e5d797e4db4f98))
 
+# [0.9.0](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.8.1...v0.9.0) (2026-06-11)
+
+
+### Features
+
+* support sanity v6 peer dependency ([9254dc7](https://github.com/flayks/sanity-plugin-webhooks-trigger/commit/9254dc7afef181fea28f177eb2e5d797e4db4f98))
+
 ## [0.8.1](https://github.com/flayks/sanity-plugin-webhooks-trigger/compare/v0.8.0...v0.8.1) (2026-05-04)
 
 
