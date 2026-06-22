@@ -40,8 +40,6 @@ export function buildWebhookRequestOptions({
   return {
     method,
     headers,
-    // Endpoints rarely include CORS headers; lets 'no-cors' reach the server without the browser throwing on the response
-    ...(isGithub ? {} : {mode: 'no-cors'}),
     ...(payload
       ? {body: payload}
       : isGithub && {body: JSON.stringify({event_type: githubEventType || DEFAULT_GITHUB_EVENT_TYPE})}),

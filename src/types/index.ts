@@ -10,12 +10,21 @@ export interface WebhooksTriggerOptions {
   encryptionSalt?: string
   githubEventType?: string
   triggerAll?: boolean
+  maxRunHistory?: number
 }
 
 export interface WebhooksTriggerConfig {
   tool: {
     options: WebhooksTriggerOptions
   }
+}
+
+export interface RunHistoryEntry {
+  triggeredAt: string
+  triggeredBy: string
+  status: 'success' | 'failed' | 'triggered'
+  statusCode?: number
+  responseText?: string
 }
 
 export interface Webhook {
@@ -28,6 +37,7 @@ export interface Webhook {
   githubEventType?: string
   lastRunTime?: string
   lastRunStatus?: 'success' | 'failed' | 'triggered'
+  runHistory?: RunHistoryEntry[]
 }
 
 export interface WebhookFormModalProps {

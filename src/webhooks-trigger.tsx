@@ -14,7 +14,7 @@ import {
 import {buildTheme} from '@sanity/ui/theme'
 import {customAlphabet} from 'nanoid'
 import {useCallback, useEffect, useState, type ReactElement} from 'react'
-import {useClient} from 'sanity'
+import {useClient, useCurrentUser} from 'sanity'
 
 import {
   buildWebhookRequestOptions,
@@ -23,6 +23,7 @@ import {
 } from './github-dispatch'
 import WebhookFormModal from './modal'
 import {decryptToken, encryptToken} from './security'
+import {fetchWithCorsRetry, getDisplayHistory, mergeRunHistory, parseReadableResponse, resolveTriggeredBy} from './run-history'
 import {Webhook, WebhooksTriggerConfig} from './types'
 
 const theme = buildTheme()
@@ -40,12 +41,71 @@ const RUN_STATUS_CONFIG = {
   failed: {color: 'red', label: 'failed'},
 } as const
 
+const DEFAULT_MAX_RUN_HISTORY = 5
+
+interface RunHistoryDisplayProps {
+  history: NonNullable<Webhook['runHistory']>
+  maxEntries: number
+  expanded: boolean
+  onToggle: () => void
+}
+
+const RunHistoryDisplay = ({history, maxEntries, expanded, onToggle}: RunHistoryDisplayProps): ReactElement => {
+  const displayHistory = getDisplayHistory(history, maxEntries)
+  return (
+    <Stack gap={1}>
+      <Button mode="bleed" padding={0} style={{textAlign: 'left'}} onClick={onToggle}>
+        <Flex gap={1} align="center">
+          <ClockIcon fontSize={'1em'} style={{flexShrink: 0}} />
+          <Text size={1} muted>
+            {displayHistory.length} run{displayHistory.length !== 1 ? 's' : ''}{' '}
+            {expanded ? '▲' : '▼'}
+          </Text>
+        </Flex>
+      </Button>
+      {expanded && (
+        <Stack gap={2} style={{paddingLeft: '1.25em'}}>
+          {displayHistory.map((entry, i) => (
+            <Stack key={i} gap={1}>
+              <Flex gap={1} align="center">
+                <ClockIcon
+                  fontSize={'1em'}
+                  color={RUN_STATUS_CONFIG[entry.status].color}
+                  style={{flexShrink: 0}}
+                />
+                <Text size={1} muted>
+                  {new Date(entry.triggeredAt).toLocaleString()} — {entry.triggeredBy}
+                  {entry.statusCode !== undefined && ` — HTTP ${entry.statusCode}`}
+                </Text>
+              </Flex>
+              {entry.responseText && (
+                <Text size={1} muted style={{paddingLeft: '1.25em', fontFamily: 'monospace', wordBreak: 'break-all'}}>
+                  {entry.responseText}
+                </Text>
+              )}
+            </Stack>
+          ))}
+        </Stack>
+      )}
+    </Stack>
+  )
+}
+
 const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
   const {options} = tool
-  const {encryptionSalt, pageTitle, text, textForTriggerAll, githubEventType, triggerAll} = options
+  const {
+    encryptionSalt,
+    pageTitle,
+    text,
+    textForTriggerAll,
+    githubEventType,
+    triggerAll,
+    maxRunHistory = DEFAULT_MAX_RUN_HISTORY,
+  } = options
   const defaultGithubEventType = githubEventType || DEFAULT_GITHUB_EVENT_TYPE
 
   const client = useClient({apiVersion: '2021-06-07'})
+  const currentUser = useCurrentUser()
 
   const [webhooks, setWebhooks] = useState<Webhook[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -53,6 +113,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
   const [triggeringAll, setTriggeringAll] = useState(false)
   const [editingWebhook, setEditingWebhook] = useState<Webhook | null>(null)
   const [deletingWebhook, setDeletingWebhook] = useState<string | null>(null)
+  const [expandedHistory, setExpandedHistory] = useState<Set<string>>(new Set())
 
   /**
    * Fetch all Webhooks
@@ -117,42 +178,49 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
       setTriggeringWebhook(webhook._id)
 
       let lastRunStatus: Webhook['lastRunStatus'] = 'failed'
+      let statusCode: number | undefined
+      let responseText: string | undefined
 
-      try {
-        const authToken =
-          webhook.authToken && encryptionSalt
-            ? decryptToken(webhook.authToken, encryptionSalt)
-            : undefined
+      const authToken =
+        webhook.authToken && encryptionSalt
+          ? decryptToken(webhook.authToken, encryptionSalt)
+          : undefined
 
-        // Non-GitHub endpoints rarely support CORS. buildWebhookRequestOptions
-        // handles it with mode: 'no-cors', making the response opaque — so we
-        // mark those as 'triggered' (sent successfully, outcome unknown).
-        const isGithub = isGithubWebhookUrl(webhook.url)
-        const response = await fetch(
-          webhook.url,
-          buildWebhookRequestOptions({
-            authToken,
-            githubEventType: webhook.githubEventType || defaultGithubEventType,
-            payload: webhook.payload,
-            method: webhook.method,
-            url: webhook.url,
-          }),
-        )
+      const result = await fetchWithCorsRetry(
+        webhook.url,
+        buildWebhookRequestOptions({
+          authToken,
+          githubEventType: webhook.githubEventType || defaultGithubEventType,
+          payload: webhook.payload,
+          method: webhook.method,
+          url: webhook.url,
+        }),
+      )
 
-        lastRunStatus = isGithub ? (response.ok ? 'success' : 'failed') : 'triggered'
-      } catch (error) {
-        console.error('Failed to trigger webhook:', error)
+      if (result === null) {
+        // Both attempts failed — network error
+        console.error('Failed to trigger webhook: network error')
+      } else if (result.opaque) {
+        // no-cors fallback: response reached the server but is unreadable
+        lastRunStatus = 'triggered'
+      } else {
+        ;({status: lastRunStatus, statusCode, responseText} = await parseReadableResponse(result.response))
       }
+
+      const now = new Date().toISOString()
+      const triggeredBy = resolveTriggeredBy(currentUser)
+      const newEntry = {triggeredAt: now, triggeredBy, status: lastRunStatus, statusCode, responseText}
+      const runHistory = mergeRunHistory(newEntry, webhook.runHistory)
 
       await client
         .patch(webhook._id)
-        .set({lastRunTime: new Date().toISOString(), lastRunStatus})
+        .set({lastRunTime: now, lastRunStatus, runHistory})
         .commit()
 
       fetchWebhooks()
       setTriggeringWebhook(null)
     },
-    [client, defaultGithubEventType, fetchWebhooks, encryptionSalt],
+    [client, currentUser, defaultGithubEventType, fetchWebhooks, encryptionSalt, maxRunHistory],
   )
 
   /**
@@ -202,6 +270,18 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
     setShowModal(true)
   }, [])
 
+  const toggleHistory = useCallback((id: string) => {
+    setExpandedHistory((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }, [])
+
   return (
     <ThemeProvider theme={theme}>
       <Container width={2}>
@@ -238,7 +318,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
                       direction={['column', 'column', 'row']}
                       justify={['flex-start', 'flex-start', 'space-between']}
                     >
-                      <Stack space={1}>
+                      <Stack gap={1}>
                         <Heading as="h3" size={1} style={{marginBottom: '0.5em'}}>
                           {webhook.name}
                         </Heading>
@@ -267,7 +347,14 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
                           </Text>
                         )}
 
-                        {webhook.lastRunTime && webhook.lastRunStatus && (
+                        {webhook.runHistory && webhook.runHistory.length > 0 ? (
+                          <RunHistoryDisplay
+                            history={webhook.runHistory}
+                            maxEntries={maxRunHistory}
+                            expanded={expandedHistory.has(webhook._id)}
+                            onToggle={() => toggleHistory(webhook._id)}
+                          />
+                        ) : webhook.lastRunTime && webhook.lastRunStatus ? (
                           <Flex gap={1} align="center">
                             <ClockIcon
                               fontSize={'1em'}
@@ -279,7 +366,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
                               {new Date(webhook.lastRunTime).toLocaleString()}
                             </Text>
                           </Flex>
-                        )}
+                        ) : null}
                       </Stack>
 
                       <Box marginTop={[3, 3, 0]}>
