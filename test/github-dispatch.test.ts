@@ -49,3 +49,37 @@ test('does not attach GitHub headers or body to non-GitHub webhooks', () => {
     Authorization: 'Bearer secret-token',
   })
 })
+
+test('uses a custom payload as the body for GitHub webhooks when provided', () => {
+  const payload = JSON.stringify({ref: 'main', inputs: {env: 'production'}})
+  const requestOptions = buildWebhookRequestOptions({
+    payload,
+    method: 'POST',
+    url: 'https://api.github.com/repos/acme/repo/dispatches',
+  })
+
+  assert.equal(requestOptions.body, payload)
+})
+
+test('uses a custom payload as the body for non-GitHub webhooks when provided', () => {
+  const payload = JSON.stringify({key: 'value'})
+  const requestOptions = buildWebhookRequestOptions({
+    payload,
+    method: 'POST',
+    url: 'https://example.com/webhook',
+  })
+
+  assert.equal(requestOptions.body, payload)
+})
+
+test('payload takes precedence over the GitHub event type body', () => {
+  const payload = JSON.stringify({custom: true})
+  const requestOptions = buildWebhookRequestOptions({
+    payload,
+    githubEventType: 'webhook-specific',
+    method: 'POST',
+    url: 'https://api.github.com/repos/acme/repo/dispatches',
+  })
+
+  assert.equal(requestOptions.body, payload)
+})
