@@ -18,6 +18,7 @@ const WebhookFormModal = ({
   const [githubEventType, setGithubEventType] = useState<Webhook['githubEventType']>(
     webhook.githubEventType || undefined,
   )
+  const [payload, setPayload] = useState<Webhook['payload']>(webhook.payload || undefined)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const showGithubEventType = isGithubWebhookUrl(url)
 
@@ -39,13 +40,14 @@ const WebhookFormModal = ({
         method,
         ...(authToken && {authToken}),
         ...(githubEventType && {githubEventType}),
+        ...(payload && {payload}),
       }
 
       await onSubmit(updatedWebhook)
 
       setIsSubmitting(false)
     },
-    [authToken, githubEventType, method, name, onSubmit, url, webhook],
+    [authToken, githubEventType, method, name, payload, onSubmit, url, webhook],
   )
 
   return (
@@ -102,7 +104,22 @@ const WebhookFormModal = ({
               </Stack>
             </Grid>
 
-            {showGithubEventType && (
+            {method == "POST" && (
+            <Stack space={3}>
+              <Label htmlFor="json-payload">
+                Payload (JSON format, optional)
+              </Label>
+              <TextInput
+                id="json-payload"
+                type="text"
+                value={payload}
+                placeholder='{"key":"value"}'
+                onChange={(event) => setPayload(event.currentTarget.value)}
+              />
+            </Stack>
+            )}
+
+            {showGithubEventType && (payload == null || payload.trim() == "") && (
               <Stack space={3}>
                 <Label htmlFor="webhook-github-event-type">GitHub Event Type (Optional)</Label>
                 <TextInput
@@ -112,7 +129,7 @@ const WebhookFormModal = ({
                   onChange={(event) => setGithubEventType(event.currentTarget.value || undefined)}
                 />
                 <Text size={1} muted>
-                  Used for GitHub repository dispatch requests. If omitted, this webhook uses{' '}
+                  Used for GitHub repository dispatch requests. Only used if `payload` is NOT set. If omitted (and `payload` is not set), this webhook uses
                   {defaultGithubEventType}.
                 </Text>
               </Stack>

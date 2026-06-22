@@ -6,6 +6,7 @@ interface BuildWebhookRequestOptionsArgs {
   authToken?: string
   githubEventType?: string
   method?: Webhook['method']
+  payload?: string
   url?: Webhook['url']
 }
 
@@ -24,6 +25,7 @@ export function buildWebhookRequestOptions({
   authToken,
   githubEventType,
   method,
+  payload,
   url,
 }: BuildWebhookRequestOptionsArgs): RequestInit {
   const isGithub = isGithubWebhookUrl(url)
@@ -40,8 +42,8 @@ export function buildWebhookRequestOptions({
     headers,
     // Endpoints rarely include CORS headers; lets 'no-cors' reach the server without the browser throwing on the response
     ...(isGithub ? {} : {mode: 'no-cors'}),
-    ...(isGithub && {
-      body: JSON.stringify({event_type: githubEventType || DEFAULT_GITHUB_EVENT_TYPE}),
-    }),
+    ...(payload
+      ? {body: payload}
+      : isGithub && {body: JSON.stringify({event_type: githubEventType || DEFAULT_GITHUB_EVENT_TYPE})}),
   }
 }

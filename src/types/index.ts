@@ -4,7 +4,9 @@ export interface WebhooksTriggerOptions {
   name?: string
   icon?: ReactNode
   title?: string
+  pageTitle?: string
   text?: string
+  textForTriggerAll?: string
   encryptionSalt?: string
   githubEventType?: string
   triggerAll?: boolean
@@ -22,6 +24,7 @@ export interface Webhook {
   url: string | undefined
   method: 'GET' | 'POST' | undefined
   authToken?: string
+  payload?: string
   githubEventType?: string
   lastRunTime?: string
   lastRunStatus?: 'success' | 'failed' | 'triggered'

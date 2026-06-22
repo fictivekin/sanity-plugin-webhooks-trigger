@@ -42,7 +42,7 @@ const RUN_STATUS_CONFIG = {
 
 const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
   const {options} = tool
-  const {encryptionSalt, text, githubEventType, triggerAll} = options
+  const {encryptionSalt, pageTitle, text, textForTriggerAll, githubEventType, triggerAll} = options
   const defaultGithubEventType = githubEventType || DEFAULT_GITHUB_EVENT_TYPE
 
   const client = useClient({apiVersion: '2021-06-07'})
@@ -133,6 +133,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
           buildWebhookRequestOptions({
             authToken,
             githubEventType: webhook.githubEventType || defaultGithubEventType,
+            payload: webhook.payload,
             method: webhook.method,
             url: webhook.url,
           }),
@@ -214,7 +215,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
           >
             <Stack space={4} style={{flex: 1, minWidth: 0}}>
               <Heading as="h2" size={3}>
-                Deploy via Webhooks
+                {pageTitle || 'Deploy via Webhooks'}
               </Heading>
               <Text size={2} style={{maxWidth: '70ch'}}>
                 {text || defaultText}
@@ -318,7 +319,7 @@ const WebhooksTrigger = ({tool}: WebhooksTriggerConfig): ReactElement => {
                     tone="positive"
                     onClick={handleTriggerAllWebhooks}
                     disabled={triggeringAll || triggeringWebhook !== null}
-                    text={triggeringAll ? undefined : 'Trigger All'}
+                    text={triggeringAll ? undefined : (textForTriggerAll || 'Trigger All')}
                     icon={triggeringAll ? Spinner : undefined}
                   />
                 </Flex>
