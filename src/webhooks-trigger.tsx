@@ -50,40 +50,47 @@ interface RunHistoryDisplayProps {
   onToggle: () => void
 }
 
+const RunHistoryEntry = ({entry}: {entry: NonNullable<Webhook['runHistory']>[number]}): ReactElement => (
+  <Stack gap={1}>
+    <Flex gap={1} align="center">
+      <ClockIcon
+        fontSize={'1em'}
+        color={RUN_STATUS_CONFIG[entry.status].color}
+        style={{flexShrink: 0}}
+      />
+      <Text size={1} muted>
+        {new Date(entry.triggeredAt).toLocaleString()} — {entry.triggeredBy}
+        {entry.statusCode !== undefined && ` — HTTP ${entry.statusCode}`}
+      </Text>
+    </Flex>
+    {entry.responseText && (
+      <Text size={1} muted style={{paddingLeft: '1.25em', fontFamily: 'monospace', wordBreak: 'break-all'}}>
+        {entry.responseText}
+      </Text>
+    )}
+  </Stack>
+)
+
 const RunHistoryDisplay = ({history, maxEntries, expanded, onToggle}: RunHistoryDisplayProps): ReactElement => {
   const displayHistory = getDisplayHistory(history, maxEntries)
+  const latest = displayHistory[0]
+  const older = displayHistory.slice(1)
   return (
     <Stack gap={1}>
       <Button mode="bleed" padding={0} style={{textAlign: 'left'}} onClick={onToggle}>
         <Flex gap={1} align="center">
-          <ClockIcon fontSize={'1em'} style={{flexShrink: 0}} />
-          <Text size={1} muted>
-            {displayHistory.length} run{displayHistory.length !== 1 ? 's' : ''}{' '}
-            {expanded ? '▲' : '▼'}
-          </Text>
+          <RunHistoryEntry entry={latest} />
+          {older.length > 0 && (
+            <Text size={1} muted style={{flexShrink: 0}}>
+              {expanded ? '▲' : `+${older.length} more ▼`}
+            </Text>
+          )}
         </Flex>
       </Button>
-      {expanded && (
+      {expanded && older.length > 0 && (
         <Stack gap={2} style={{paddingLeft: '1.25em'}}>
-          {displayHistory.map((entry, i) => (
-            <Stack key={i} gap={1}>
-              <Flex gap={1} align="center">
-                <ClockIcon
-                  fontSize={'1em'}
-                  color={RUN_STATUS_CONFIG[entry.status].color}
-                  style={{flexShrink: 0}}
-                />
-                <Text size={1} muted>
-                  {new Date(entry.triggeredAt).toLocaleString()} — {entry.triggeredBy}
-                  {entry.statusCode !== undefined && ` — HTTP ${entry.statusCode}`}
-                </Text>
-              </Flex>
-              {entry.responseText && (
-                <Text size={1} muted style={{paddingLeft: '1.25em', fontFamily: 'monospace', wordBreak: 'break-all'}}>
-                  {entry.responseText}
-                </Text>
-              )}
-            </Stack>
+          {older.map((entry, i) => (
+            <RunHistoryEntry key={i} entry={entry} />
           ))}
         </Stack>
       )}
